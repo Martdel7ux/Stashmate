@@ -9,6 +9,9 @@ import { colors, radius, shadow, spacing } from '@/theme';
 const GLYPHS: Record<string, string> = { index: '◇', wallet: '▣' };
 const LABELS: Record<string, string> = { index: 'Goals', wallet: 'Wallet' };
 
+/** Visual height of the floating bar (excludes the safe-area inset below it). */
+export const TAB_BAR_HEIGHT = 64;
+
 /** Floating frosted-glass tab bar. */
 export function TabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();

@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -35,9 +36,19 @@ export function HomeScreen() {
     };
   }, [goals]);
 
+  // The floating tab bar pill (~64) sits a safe-inset + 8 above the screen bottom.
+  // Lift the action button clear of it, then pad the scroll list past both.
+  const safeBottom = insets.bottom || 0;
+  const tabBarSpace = safeBottom + 80; // pill height + breathing room
+  const fabBottomPad = tabBarSpace + spacing.lg;
+
   return (
     <View style={styles.root}>
-      <Screen onRefresh={refetch} refreshing={isRefetching}>
+      <Screen
+        onRefresh={refetch}
+        refreshing={isRefetching}
+        contentStyle={{ paddingBottom: fabBottomPad + 64 + spacing.xl }}
+      >
         <View style={styles.headerRow}>
           <Logo />
           <IconButton glyph="☰" onPress={() => router.push('/(app)/profile')} />
@@ -90,7 +101,12 @@ export function HomeScreen() {
         )}
       </Screen>
 
-      <View style={[styles.fab, { paddingBottom: insets.bottom + spacing.md }]} pointerEvents="box-none">
+      <View style={[styles.fab, { paddingBottom: fabBottomPad }]} pointerEvents="box-none">
+        <LinearGradient
+          colors={['rgba(12,10,8,0)', colors.bg]}
+          style={styles.fabScrim}
+          pointerEvents="none"
+        />
         <GradientButton label="New goal" onPress={() => router.push('/(app)/create')} />
       </View>
     </View>
@@ -120,6 +136,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: spacing.lg,
     right: spacing.lg,
+    bottom: 0,
+  },
+  fabScrim: {
+    position: 'absolute',
+    left: -spacing.lg,
+    right: -spacing.lg,
+    top: -spacing['2xl'],
     bottom: 0,
   },
 });
