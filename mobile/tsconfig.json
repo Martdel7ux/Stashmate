@@ -1,0 +1,21 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "baseUrl": ".",
+    // Expo's base sets moduleResolution "node", which can't read the "exports"
+    // maps that modern packages (e.g. @tanstack/react-query v5) ship — that makes
+    // their generics collapse to `any`. "bundler" matches how Metro resolves.
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts"
+  ]
+}

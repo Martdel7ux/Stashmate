@@ -57,6 +57,17 @@ builder.Services.AddHangfire(config => config
     .UsePostgreSqlStorage(opt => opt.UseNpgsqlConnection(connectionString)));
 builder.Services.AddHangfireServer();
 
+// ---- CORS (dev: allow the Expo web client to call the API) ----
+const string DevCorsPolicy = "DevCors";
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(DevCorsPolicy, policy => policy
+        .SetIsOriginAllowed(_ => true)
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials());
+});
+
 // ---- MVC + Swagger ----
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -91,6 +102,7 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.UseCors(DevCorsPolicy);
 }
 
 app.UseAuthentication();
