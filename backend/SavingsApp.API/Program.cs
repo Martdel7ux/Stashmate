@@ -15,7 +15,12 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
     ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection is not configured.");
 
 // ---- EF Core ----
-builder.Services.AddDbContext<AppDbContext>(opt => opt.UseNpgsql(connectionString));
+builder.Services.AddDbContext<AppDbContext>(opt => opt.UseNpgsql(
+    connectionString,
+    npgsql => npgsql.EnableRetryOnFailure(
+        maxRetryCount: 8,
+        maxRetryDelay: TimeSpan.FromSeconds(3),
+        errorCodesToAdd: null)));
 
 // ---- Auth (JWT Bearer) ----
 var jwtSecret = builder.Configuration["Jwt:Secret"];
@@ -90,12 +95,29 @@ builder.Services.AddSwaggerGen(c =>
 var app = builder.Build();
 
 // ---- Migrate + seed (Development) ----
+// Retry the initial connect so a transient DB hiccup at startup doesn't crash the host.
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
-    if (app.Environment.IsDevelopment())
-        await db.SeedAsync();
+    var startupLogger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+    const int maxAttempts = 15;
+    for (var attempt = 1; ; attempt++)
+    {
+        try
+        {
+            db.Database.Migrate();
+            if (app.Environment.IsDevelopment())
+                await db.SeedAsync();
+            break;
+        }
+        catch (Exception ex) when (attempt < maxAttempts)
+        {
+            startupLogger.LogWarning("DB not ready (attempt {Attempt}/{Max}): {Message}. Retrying…",
+                attempt, maxAttempts, ex.Message);
+            await Task.Delay(TimeSpan.FromSeconds(2));
+        }
+    }
 }
 
 if (app.Environment.IsDevelopment())
